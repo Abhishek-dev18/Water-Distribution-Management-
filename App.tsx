@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Users, ClipboardList, Receipt, LayoutDashboard, Menu, MapPin, Settings as SettingsIcon, FileSpreadsheet } from 'lucide-react';
+import { Users, ClipboardList, Receipt, LayoutDashboard, Menu, MapPin, Settings as SettingsIcon, FileSpreadsheet, BarChart3, LogOut } from 'lucide-react';
 import CustomerManager from './components/CustomerManager';
 import SupplySheet from './components/SupplySheet';
 import Billing from './components/Billing';
@@ -8,14 +7,29 @@ import Dashboard from './components/Dashboard';
 import AreaManager from './components/AreaManager';
 import Settings from './components/Settings';
 import SupplyChart from './components/SupplyChart';
+import Analytics from './components/Analytics';
+import Login from './components/Login';
 
 // Simple Router since we can't use React Router DOM easily in this file structure constraint without complex setup
-// We'll use local state for "Pages"
-type Page = 'dashboard' | 'supply' | 'billing' | 'customers' | 'areas' | 'settings' | 'chart';
+type Page = 'dashboard' | 'analytics' | 'supply' | 'billing' | 'customers' | 'areas' | 'settings' | 'chart';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentPage('dashboard');
+  };
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   const NavItem = ({ page, icon: Icon, label }: { page: Page, icon: any, label: string }) => (
     <button
@@ -45,15 +59,24 @@ const App: React.FC = () => {
         </div>
         <div className="p-4 space-y-2 flex flex-col h-[calc(100%-4rem)]">
           <NavItem page="dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <NavItem page="analytics" icon={BarChart3} label="Analytics" />
           <NavItem page="supply" icon={ClipboardList} label="Daily Supply" />
           <NavItem page="chart" icon={FileSpreadsheet} label="Supply Chart" />
           <NavItem page="billing" icon={Receipt} label="Billing" />
+          
           <div className="pt-4 pb-2 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Management</div>
           <NavItem page="customers" icon={Users} label="Customers" />
           <NavItem page="areas" icon={MapPin} label="Areas" />
           
-          <div className="mt-auto pt-4 border-t border-gray-100">
+          <div className="mt-auto pt-4 border-t border-gray-100 space-y-2">
              <NavItem page="settings" icon={SettingsIcon} label="Settings" />
+             <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-red-500 hover:bg-red-50"
+            >
+              <LogOut size={20} />
+              <span className="font-medium">Logout</span>
+            </button>
           </div>
         </div>
       </div>
@@ -78,6 +101,7 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-auto bg-slate-50">
           {currentPage === 'dashboard' && <Dashboard />}
+          {currentPage === 'analytics' && <Analytics />}
           {currentPage === 'customers' && <CustomerManager />}
           {currentPage === 'areas' && <AreaManager />}
           {currentPage === 'supply' && <SupplySheet />}

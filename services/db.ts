@@ -105,21 +105,50 @@ export const getCustomers = (): Customer[] => {
   return getStoredData<Customer>(STORAGE_KEYS.CUSTOMERS);
 };
 
+export const generateNextCustomerId = (dateStr: string): string => {
+  const customers = getCustomers();
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return ''; 
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const prefix = `${year}${month}`;
+
+  let maxSeq = 0;
+  // Format: YYYYMMxxxx (e.g., 2025020001)
+  customers.forEach(c => {
+    // Check if ID matches format YYYYMM + 4 digits
+    if (c.id.startsWith(prefix) && c.id.length === 10) {
+        const seqPart = c.id.substring(6);
+        const seq = parseInt(seqPart, 10);
+        if (!isNaN(seq) && seq > maxSeq) {
+            maxSeq = seq;
+        }
+    }
+  });
+
+  // Increment sequence
+  return `${prefix}${String(maxSeq + 1).padStart(4, '0')}`;
+};
+
 export const saveCustomer = (customer: Omit<Customer, 'id'> | Customer): Customer => {
   const customers = getCustomers();
   let newCustomer: Customer;
 
-  if ('id' in customer) {
-    // Update
+  // Check if we are updating (ID exists in DB) or Creating
+  if ('id' in customer && customer.id) {
     const index = customers.findIndex(c => c.id === customer.id);
     if (index >= 0) {
+      // Update existing
       customers[index] = customer as Customer;
       newCustomer = customer as Customer;
     } else {
-      newCustomer = { ...customer, id: generateId() } as Customer; // Fallback
+      // Create new with specific ID (e.g. generated formatted ID)
+      newCustomer = customer as Customer;
+      customers.push(newCustomer);
     }
   } else {
-    // Create
+    // Fallback: Create with random ID if no ID provided
     newCustomer = { ...customer, id: generateId() };
     customers.push(newCustomer);
   }
@@ -131,8 +160,6 @@ export const saveCustomer = (customer: Omit<Customer, 'id'> | Customer): Custome
 export const deleteCustomer = (id: string) => {
   const customers = getCustomers().filter(c => c.id !== id);
   setStoredData(STORAGE_KEYS.CUSTOMERS, customers);
-  
-  // Also cleanup transactions? Optional, but keeping history is usually safer.
 };
 
 // --- Transaction Service ---
@@ -205,7 +232,7 @@ export const getCustomerStats = (customerId: string): CustomerStats => {
   return {
     currentJarBalance: jarBal,
     currentThermosBalance: thermosBal,
-    totalDue: due // Note: Security deposit is usually separate, not part of "Due for usage"
+    totalDue: due 
   };
 };
 

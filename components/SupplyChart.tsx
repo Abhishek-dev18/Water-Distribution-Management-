@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, Filter, Printer, FileSpreadsheet } from 'lucide-react';
 import { Customer, Transaction, CustomerStats, AppSettings } from '../types';
@@ -24,7 +25,7 @@ const SupplyChart: React.FC = () => {
     const loadedCustomers = getCustomers();
     setCustomers(loadedCustomers);
     
-    // Load Transactions for Date
+    // Load Transactions for Date (Used only for balances if needed, but supply chart is usually for NEXT day manual entry)
     const txs = getTransactionsByDate(date);
     const txMap: Record<string, Transaction> = {};
     txs.forEach(t => {
@@ -148,7 +149,6 @@ const SupplyChart: React.FC = () => {
                 </tr>
               ) : (
                 filteredCustomers.map((customer, index) => {
-                  const tx = transactions[customer.id];
                   const stat = stats[customer.id] || { currentJarBalance: 0, currentThermosBalance: 0, totalDue: 0 };
                   
                   return (
@@ -157,28 +157,15 @@ const SupplyChart: React.FC = () => {
                       <td className="border border-black px-2 py-1 font-semibold truncate max-w-[150px]">{customer.name}</td>
                       <td className="border border-black px-2 py-1 truncate max-w-[100px] text-[10px]">{customer.landmark}</td>
                       
-                      {/* Inputs - Show value if exists, otherwise empty space for writing */}
-                      <td className="border border-black px-1 py-1 text-center font-medium">
-                        {tx?.jarsDelivered || ''}
-                      </td>
-                      <td className="border border-black px-1 py-1 text-center font-medium">
-                        {tx?.jarsReturned || ''}
-                      </td>
-                      <td className="border border-black px-1 py-1 text-center font-medium">
-                        {tx?.thermosDelivered || ''}
-                      </td>
-                      <td className="border border-black px-1 py-1 text-center font-medium">
-                        {tx?.thermosReturned || ''}
-                      </td>
-                      <td className="border border-black px-1 py-1 text-center font-medium">
-                         {tx?.paymentAmount ? `₹${tx.paymentAmount}` : ''}
-                      </td>
-                      <td className="border border-black px-1 py-1 text-center font-medium">
-                         {/* Show Due only if it exists, otherwise leave blank for manual calc if needed */}
-                         {stat.totalDue > 0 ? `₹${stat.totalDue}` : ''}
-                      </td>
+                      {/* Blank Columns for Manual Entry */}
+                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
+                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
+                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
+                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
+                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
+                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
                       
-                      {/* Balances */}
+                      {/* Balances - Show Current System Balance */}
                       <td className="border border-black px-1 py-1 text-center font-bold text-[10px] bg-gray-50 print:bg-transparent">
                         {stat.currentJarBalance > 0 ? stat.currentJarBalance : ''}
                       </td>

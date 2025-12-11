@@ -3,6 +3,7 @@ export interface Customer {
   id: string;
   name: string;
   area: string;
+  address: string; // New field
   landmark: string;
   mobile: string;
   rateJar: number;
