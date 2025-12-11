@@ -2,8 +2,9 @@
 export interface Customer {
   id: string;
   name: string;
+  nameHindi?: string; // New field for Hindi Name
   area: string;
-  address: string; // New field
+  address: string; 
   landmark: string;
   mobile: string;
   rateJar: number;

@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, MapPin, Phone, Package, AlertCircle, Hash, Home } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Edit2, Trash2, MapPin, Phone, Package, AlertCircle, Hash, Languages } from 'lucide-react';
 import { Customer, Area } from '../types';
 import { getCustomers, saveCustomer, deleteCustomer, getCustomerStats, getAreas, generateNextCustomerId } from '../services/db';
 
@@ -10,10 +10,13 @@ const CustomerManager: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
+  // Transliteration Timer Ref
+  const transliterationTimeoutRef = useRef<any>(null);
+
   // Form State
   const [formData, setFormData] = useState<Partial<Customer>>({
     id: '',
-    name: '', area: '', landmark: '', address: '', mobile: '', rateJar: 20, rateThermos: 10, securityDeposit: 0, startDate: new Date().toISOString().split('T')[0]
+    name: '', nameHindi: '', area: '', landmark: '', address: '', mobile: '', rateJar: 20, rateThermos: 10, securityDeposit: 0, startDate: new Date().toISOString().split('T')[0]
   });
 
   const [stats, setStats] = useState<Record<string, any>>({});
@@ -44,6 +47,35 @@ const CustomerManager: React.FC = () => {
     }
   }, [formData.startDate, editingId, isModalOpen]);
 
+  // Handle Name Change with Transliteration
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setFormData(prev => ({ ...prev, name: val }));
+
+    if (transliterationTimeoutRef.current) {
+      clearTimeout(transliterationTimeoutRef.current);
+    }
+
+    // Debounce transliteration call (300ms)
+    if (val.trim()) {
+      transliterationTimeoutRef.current = setTimeout(async () => {
+        try {
+          const response = await fetch(`https://inputtools.google.com/request?text=${encodeURIComponent(val)}&itc=hi-t-i0-und&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8`);
+          const data = await response.json();
+          // API returns ["SUCCESS", [["source", ["result1", "result2"], ...]]]
+          if (data && data[0] === 'SUCCESS' && data[1] && data[1][0] && data[1][0][1] && data[1][0][1][0]) {
+             const hindiText = data[1][0][1][0];
+             setFormData(prev => ({ ...prev, nameHindi: hindiText }));
+          }
+        } catch (err) {
+          console.error('Transliteration failed', err);
+        }
+      }, 300);
+    } else {
+        setFormData(prev => ({ ...prev, nameHindi: '' }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = editingId ? { ...formData, id: editingId } : formData;
@@ -57,7 +89,7 @@ const CustomerManager: React.FC = () => {
     saveCustomer(payload as Customer);
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ name: '', area: '', landmark: '', address: '', mobile: '', rateJar: 20, rateThermos: 10, securityDeposit: 0, startDate: new Date().toISOString().split('T')[0] });
+    setFormData({ name: '', nameHindi: '', area: '', landmark: '', address: '', mobile: '', rateJar: 20, rateThermos: 10, securityDeposit: 0, startDate: new Date().toISOString().split('T')[0] });
     loadData();
   };
 
@@ -82,7 +114,7 @@ const CustomerManager: React.FC = () => {
     setFormData(prev => ({ 
       ...prev, 
       id: nextId,
-      name: '', landmark: '', address: '', mobile: '', 
+      name: '', nameHindi: '', landmark: '', address: '', mobile: '', 
       // Reset area or default to first
       area: areas.length > 0 ? areas[0].name : '',
       rateJar: 20, rateThermos: 10, securityDeposit: 0,
@@ -149,7 +181,8 @@ const CustomerManager: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="text-[10px] text-brand-500 font-mono mb-1">{customer.id}</div>
                         <div className="font-semibold text-gray-800">{customer.name}</div>
-                        <div className="text-sm text-gray-500 flex items-center gap-1"><Phone size={12}/> {customer.mobile}</div>
+                        {customer.nameHindi && <div className="text-sm text-gray-600 font-hindi">{customer.nameHindi}</div>}
+                        <div className="text-sm text-gray-500 flex items-center gap-1 mt-1"><Phone size={12}/> {customer.mobile}</div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
                          <div className="font-medium text-gray-700">{customer.landmark}</div>
@@ -209,19 +242,29 @@ const CustomerManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Name (English)</label>
                   <input required type="text" 
                     className="w-full rounded-lg border-gray-300 bg-white shadow-sm border p-2.5 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all placeholder-gray-300" 
-                    placeholder="Enter full name"
-                    value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                    placeholder="Full name"
+                    value={formData.name} 
+                    onChange={handleNameChange} // Used new handler
+                  />
                 </div>
-                <div>
+                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1"><Languages size={14}/> Name (Hindi)</label>
+                  <input type="text" 
+                    className="w-full rounded-lg border-gray-300 bg-white shadow-sm border p-2.5 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all placeholder-gray-300 font-hindi" 
+                    placeholder="नाम हिंदी में"
+                    value={formData.nameHindi || ''} onChange={e => setFormData({...formData, nameHindi: e.target.value})} />
+                </div>
+              </div>
+
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Mobile</label>
                   <input required type="text" 
                     className="w-full rounded-lg border-gray-300 bg-white shadow-sm border p-2.5 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all placeholder-gray-300" 
                     placeholder="10 digit number"
                     value={formData.mobile} onChange={e => setFormData({...formData, mobile: e.target.value})} />
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-5">

@@ -162,7 +162,7 @@ const Billing: React.FC = () => {
                     ) : (
                       filteredCustomers.map(c => (
                         <option key={c.id} value={c.id}>
-                          {c.name} - {c.area} {c.mobile ? `(${c.mobile})` : ''}
+                          {c.name} {c.nameHindi ? `/ ${c.nameHindi}` : ''} - {c.area} {c.mobile ? `(${c.mobile})` : ''}
                         </option>
                       ))
                     )}
@@ -198,7 +198,8 @@ const Billing: React.FC = () => {
             <div className="w-1/2">
               <p className="text-gray-500 text-xs uppercase mb-1">Billed To:</p>
               <p className="font-bold text-lg text-gray-800">{billData.customer.name}</p>
-              <p className="text-gray-600">{billData.customer.area}</p>
+              {billData.customer.nameHindi && <p className="font-bold text-lg text-gray-800 font-hindi">{billData.customer.nameHindi}</p>}
+              <p className="text-gray-600 mt-1">{billData.customer.area}</p>
               {billData.customer.landmark && <p className="text-gray-600 text-xs">({billData.customer.landmark})</p>}
               <p className="text-gray-600 font-medium">Ph: {billData.customer.mobile}</p>
             </div>

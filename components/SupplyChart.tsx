@@ -53,9 +53,8 @@ const SupplyChart: React.FC = () => {
 
   const filteredCustomers = useMemo(() => {
     if (!filterArea) return [];
-    return customers
-      .filter(c => c.area === filterArea)
-      .sort((a, b) => a.name.localeCompare(b.name));
+    // Only filter, do not sort by name. getCustomers() returns ID-sorted list.
+    return customers.filter(c => c.area === filterArea);
   }, [customers, filterArea]);
 
   return (
@@ -154,7 +153,9 @@ const SupplyChart: React.FC = () => {
                   return (
                     <tr key={customer.id} className="print:h-8">
                       <td className="border border-black px-1 py-1 text-center text-gray-600">{index + 1}</td>
-                      <td className="border border-black px-2 py-1 font-semibold truncate max-w-[150px]">{customer.name}</td>
+                      <td className="border border-black px-2 py-1">
+                        <div className="font-semibold truncate max-w-[150px] font-hindi">{customer.nameHindi || customer.name}</div>
+                      </td>
                       <td className="border border-black px-2 py-1 truncate max-w-[100px] text-[10px]">{customer.landmark}</td>
                       
                       {/* Blank Columns for Manual Entry */}

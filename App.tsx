@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Users, ClipboardList, Receipt, LayoutDashboard, Menu, MapPin, Settings as SettingsIcon, FileSpreadsheet, BarChart3, LogOut } from 'lucide-react';
 import CustomerManager from './components/CustomerManager';
@@ -90,7 +91,7 @@ const App: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden print:h-auto print:overflow-visible">
         {/* Mobile Header */}
         <header className="h-16 bg-white border-b flex items-center px-4 md:hidden print:hidden shrink-0">
           <button onClick={() => setSidebarOpen(true)} className="text-gray-600 p-2 hover:bg-gray-100 rounded">
@@ -99,7 +100,7 @@ const App: React.FC = () => {
           <span className="ml-4 font-bold text-brand-600 text-lg">AquaFlow</span>
         </header>
 
-        <main className="flex-1 overflow-auto bg-slate-50">
+        <main className="flex-1 overflow-auto bg-slate-50 print:overflow-visible print:h-auto">
           {currentPage === 'dashboard' && <Dashboard />}
           {currentPage === 'analytics' && <Analytics />}
           {currentPage === 'customers' && <CustomerManager />}

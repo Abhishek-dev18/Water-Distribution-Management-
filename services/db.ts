@@ -102,7 +102,9 @@ export const deleteArea = (id: string) => {
 // --- Customer Service ---
 
 export const getCustomers = (): Customer[] => {
-  return getStoredData<Customer>(STORAGE_KEYS.CUSTOMERS);
+  const customers = getStoredData<Customer>(STORAGE_KEYS.CUSTOMERS);
+  // Sort by ID ascending (numeric aware comparison for formatted IDs)
+  return customers.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
 };
 
 export const generateNextCustomerId = (dateStr: string): string => {
@@ -155,6 +157,13 @@ export const saveCustomer = (customer: Omit<Customer, 'id'> | Customer): Custome
   
   setStoredData(STORAGE_KEYS.CUSTOMERS, customers);
   return newCustomer;
+};
+
+export const saveCustomersBulk = (newCustomers: Customer[]) => {
+  const customers = getCustomers();
+  // Appends new customers directly
+  customers.push(...newCustomers);
+  setStoredData(STORAGE_KEYS.CUSTOMERS, customers);
 };
 
 export const deleteCustomer = (id: string) => {
