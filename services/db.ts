@@ -253,3 +253,38 @@ export const getAllCustomerStats = (): Record<string, CustomerStats> => {
     });
     return stats;
 }
+
+// --- Backup & Restore Service ---
+
+export const exportDatabase = (): string => {
+  const data = {
+    customers: getCustomers(),
+    transactions: getTransactions(),
+    areas: getAreas(),
+    settings: getSettings(),
+    timestamp: new Date().toISOString(),
+    version: '1.0'
+  };
+  return JSON.stringify(data, null, 2);
+};
+
+export const importDatabase = (jsonString: string): { success: boolean, message: string } => {
+  try {
+    const data = JSON.parse(jsonString);
+    
+    // Simple validation
+    if (!data.version) {
+      return { success: false, message: 'Invalid backup file format.' };
+    }
+
+    if (Array.isArray(data.customers)) setStoredData(STORAGE_KEYS.CUSTOMERS, data.customers);
+    if (Array.isArray(data.transactions)) setStoredData(STORAGE_KEYS.TRANSACTIONS, data.transactions);
+    if (Array.isArray(data.areas)) setStoredData(STORAGE_KEYS.AREAS, data.areas);
+    if (data.settings) localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
+
+    return { success: true, message: 'Database restored successfully.' };
+  } catch (e) {
+    console.error("Import failed", e);
+    return { success: false, message: 'Failed to parse backup file.' };
+  }
+};
