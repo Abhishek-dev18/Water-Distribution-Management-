@@ -149,7 +149,6 @@ const SupplySheet: React.FC = () => {
   return (
     <div className="p-6 h-full flex flex-col bg-brand-50/30 print:bg-white print:p-0 print:h-auto print:block">
       {/* Print Header - Visible only in Print */}
-      {/* Since it is a normal block element before the table, it will naturally appear only on the first page when printing */}
       <div className="hidden print:block mb-4 text-center">
         <h1 className="text-2xl font-bold uppercase text-gray-800">{settings.companyName}</h1>
         <p className="text-sm text-gray-600">{settings.companyAddress}</p>
@@ -227,6 +226,7 @@ const SupplySheet: React.FC = () => {
             <tr>
               <th className="p-3 border border-brand-200 font-semibold min-w-[150px] print:border-gray-400 print:text-black">Name</th>
               <th className="p-3 border border-brand-200 font-semibold min-w-[120px] print:border-gray-400 print:text-black">Landmark</th>
+              <th className="p-3 border border-brand-200 font-semibold min-w-[100px] print:border-gray-400 print:text-black">Mobile</th>
               
               <th className="p-2 border border-brand-200 font-semibold text-center w-20 bg-blue-50/80 align-middle print:border-gray-400 print:bg-transparent print:text-black">Jar<br/>IN</th>
               <th className="p-2 border border-brand-200 font-semibold text-center w-20 bg-blue-50/80 align-middle print:border-gray-400 print:bg-transparent print:text-black">Jar<br/>OUT</th>
@@ -243,13 +243,12 @@ const SupplySheet: React.FC = () => {
           <tbody className="divide-y divide-brand-50 print:divide-gray-400">
             {filteredCustomers.length === 0 ? (
                <tr>
-                 <td colSpan={10} className="p-8 text-center text-gray-500 print:border print:border-gray-400">
+                 <td colSpan={11} className="p-8 text-center text-gray-500 print:border print:border-gray-400">
                    {areas.length === 0 ? "No customers/areas found. Please add areas and customers first." : "Select an area to view customers."}
                  </td>
                </tr>
             ) : (
               filteredCustomers.map(customer => {
-                // Fix: Initialize numeric fields with 0 instead of empty string to avoid operator '>' errors
                 const tx = (transactions[customer.id] || { jarsDelivered: 0, jarsReturned: 0, thermosDelivered: 0, thermosReturned: 0, paymentAmount: 0 }) as Transaction;
                 const stat = getProjectedStats(customer);
                 
@@ -257,14 +256,17 @@ const SupplySheet: React.FC = () => {
                   <tr key={customer.id} className="hover:bg-brand-50/30 group transition-colors print:hover:bg-transparent break-inside-avoid">
                     <td className="p-3 border border-brand-100 print:border-gray-400">
                       <div className="font-bold text-gray-800 text-sm font-hindi">{customer.nameHindi || customer.name}</div>
-                      <div className="text-[10px] text-brand-500 font-medium print:text-gray-600">{customer.area}</div>
                     </td>
                     
                     <td className="p-3 border border-brand-100 text-gray-500 print:border-gray-400">
                       {customer.landmark}
                     </td>
+
+                    <td className="p-3 border border-brand-100 text-gray-600 font-mono text-[11px] print:border-gray-400">
+                      {customer.mobile}
+                    </td>
                     
-                    {/* Inputs - Print as plain text if needed or styling reset */}
+                    {/* Inputs */}
                     <td className="p-0 border border-brand-100 print:border-gray-400">
                       <input 
                         type="number" min="0" placeholder="-"
@@ -332,7 +334,7 @@ const SupplySheet: React.FC = () => {
           {/* Footer Totals */}
           <tfoot className="bg-gray-100 font-bold sticky bottom-0 z-10 shadow-inner print:static print:shadow-none print:bg-gray-200">
              <tr>
-               <td className="p-3 border border-gray-300 text-right text-gray-700 print:border-gray-400" colSpan={2}>Totals:</td>
+               <td className="p-3 border border-gray-300 text-right text-gray-700 print:border-gray-400" colSpan={3}>Totals:</td>
                <td className="p-2 border border-gray-300 text-center text-brand-700 bg-blue-100 print:bg-transparent print:text-black print:border-gray-400">{totals.jarsIn}</td>
                <td className="p-2 border border-gray-300 text-center text-gray-600 bg-gray-200 print:bg-transparent print:text-black print:border-gray-400">{totals.jarsOut}</td>
                <td className="p-2 border border-gray-300 text-center text-orange-700 bg-orange-100 print:bg-transparent print:text-black print:border-gray-400">{totals.thermosIn}</td>
