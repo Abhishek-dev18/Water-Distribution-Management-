@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Customer, Transaction, calculateDailyCost } from "../types";
 
@@ -19,13 +20,15 @@ const formatDataForAI = (customers: Customer[], transactions: Transaction[]) => 
 };
 
 export const generateBusinessInsight = async (customers: Customer[], transactions: Transaction[]): Promise<string> => {
+  // Use process.env.API_KEY as the exclusive source for the API key
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
     return "API Key not found. Please ensure process.env.API_KEY is set.";
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    // Initialize GoogleGenAI with a named parameter object
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const dataContext = formatDataForAI(customers, transactions);
     
     const prompt = `
@@ -41,11 +44,13 @@ export const generateBusinessInsight = async (customers: Customer[], transaction
       Keep the tone professional and helpful.
     `;
 
+    // Use gemini-3-flash-preview for basic text tasks like this analysis
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
     });
 
+    // Directly access the .text property of the GenerateContentResponse object
     return response.text || "No analysis generated.";
   } catch (error) {
     console.error("Gemini API Error:", error);

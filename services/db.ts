@@ -168,6 +168,7 @@ export const saveCustomersBulk = (newCustomers: Customer[]) => {
 
 export const deleteCustomer = (id: string) => {
   const customers = getCustomers().filter(c => c.id !== id);
+  setStoredData(STORAGE_KEYS.TRANSACTIONS, getTransactions().filter(t => t.customerId !== id));
   setStoredData(STORAGE_KEYS.CUSTOMERS, customers);
 };
 
@@ -183,9 +184,7 @@ export const getTransactionsByDate = (date: string): Transaction[] => {
 
 export const getTransactionsByCustomerAndMonth = (customerId: string, year: number, month: number): Transaction[] => {
   return getTransactions().filter(t => {
-    // Parse Date manually to avoid Timezone issues causing off-by-one day/month
-    const [tYear, tMonth, tDay] = t.date.split('-').map(Number);
-    // tMonth is 1-based (01..12), JS Month is 0-based (0..11)
+    const [tYear, tMonth] = t.date.split('-').map(Number);
     return t.customerId === customerId && tYear === year && tMonth === (month + 1);
   });
 };
@@ -257,13 +256,22 @@ export const getAllCustomerStats = (): Record<string, CustomerStats> => {
 // --- Backup & Restore Service ---
 
 export const exportDatabase = (): string => {
+  const customers = getCustomers();
+  const stats = getAllCustomerStats();
+  
+  // Attach current stats to the backup for user reference
+  const backupData = customers.map(c => ({
+    ...c,
+    _currentStats: stats[c.id]
+  }));
+
   const data = {
-    customers: getCustomers(),
+    customers: backupData,
     transactions: getTransactions(),
     areas: getAreas(),
     settings: getSettings(),
     timestamp: new Date().toISOString(),
-    version: '1.0'
+    version: '1.1'
   };
   return JSON.stringify(data, null, 2);
 };
@@ -272,12 +280,18 @@ export const importDatabase = (jsonString: string): { success: boolean, message:
   try {
     const data = JSON.parse(jsonString);
     
-    // Simple validation
     if (!data.version) {
       return { success: false, message: 'Invalid backup file format.' };
     }
 
-    if (Array.isArray(data.customers)) setStoredData(STORAGE_KEYS.CUSTOMERS, data.customers);
+    if (Array.isArray(data.customers)) {
+        // Strip out calculated stats before saving
+        const customersToSave = data.customers.map((c: any) => {
+           const { _currentStats, ...rest } = c;
+           return rest;
+        });
+        setStoredData(STORAGE_KEYS.CUSTOMERS, customersToSave);
+    }
     if (Array.isArray(data.transactions)) setStoredData(STORAGE_KEYS.TRANSACTIONS, data.transactions);
     if (Array.isArray(data.areas)) setStoredData(STORAGE_KEYS.AREAS, data.areas);
     if (data.settings) localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));

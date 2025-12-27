@@ -249,7 +249,8 @@ const SupplySheet: React.FC = () => {
                </tr>
             ) : (
               filteredCustomers.map(customer => {
-                const tx = transactions[customer.id] || { jarsDelivered: '', jarsReturned: '', thermosDelivered: '', thermosReturned: '', paymentAmount: '' };
+                // Fix: Initialize numeric fields with 0 instead of empty string to avoid operator '>' errors
+                const tx = (transactions[customer.id] || { jarsDelivered: 0, jarsReturned: 0, thermosDelivered: 0, thermosReturned: 0, paymentAmount: 0 }) as Transaction;
                 const stat = getProjectedStats(customer);
                 
                 return (

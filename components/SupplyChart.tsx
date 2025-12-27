@@ -18,14 +18,10 @@ const SupplyChart: React.FC = () => {
   });
 
   useEffect(() => {
-    // Load Settings
     setSettings(getSettings());
-    
-    // Load Customers
     const loadedCustomers = getCustomers();
     setCustomers(loadedCustomers);
     
-    // Load Transactions for Date (Used only for balances if needed, but supply chart is usually for NEXT day manual entry)
     const txs = getTransactionsByDate(date);
     const txMap: Record<string, Transaction> = {};
     txs.forEach(t => {
@@ -33,18 +29,15 @@ const SupplyChart: React.FC = () => {
     });
     setTransactions(txMap);
 
-    // Load Stats (Balances)
     const newStats: Record<string, CustomerStats> = {};
     loadedCustomers.forEach(c => {
       newStats[c.id] = getCustomerStats(c.id);
     });
     setStats(newStats);
-
   }, [date]);
 
   const areas = useMemo(() => Array.from(new Set(customers.map(c => c.area))).sort(), [customers]);
 
-  // Auto-select first area
   useEffect(() => {
     if (areas.length > 0 && (!filterArea || !areas.includes(filterArea))) {
       setFilterArea(areas[0]);
@@ -53,19 +46,18 @@ const SupplyChart: React.FC = () => {
 
   const filteredCustomers = useMemo(() => {
     if (!filterArea) return [];
-    // Only filter, do not sort by name. getCustomers() returns ID-sorted list.
     return customers.filter(c => c.area === filterArea);
   }, [customers, filterArea]);
 
   return (
-    <div className="p-6 h-full flex flex-col bg-slate-50">
+    <div className="p-6 h-full flex flex-col bg-slate-50 print:bg-white print:p-0 print:block">
       {/* Controls - Hidden on Print */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 print:hidden bg-white p-4 rounded-xl shadow-sm border border-gray-200">
         <div>
            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
              <FileSpreadsheet className="text-brand-600" /> Supply Chart
            </h1>
-           <p className="text-sm text-gray-500">Printable A4 sheet for daily delivery tracking.</p>
+           <p className="text-sm text-gray-500">Printable sheet for daily tracking (35+ rows/page).</p>
         </div>
        
         <div className="flex flex-wrap gap-4 items-end">
@@ -109,40 +101,41 @@ const SupplyChart: React.FC = () => {
         </div>
       </div>
 
-      {/* A4 Preview Container */}
-      <div className="flex-1 overflow-auto flex justify-center bg-gray-100 print:bg-white print:overflow-visible">
-        <div className="bg-white shadow-xl print:shadow-none w-[210mm] min-h-[297mm] p-[10mm] box-border text-black">
+      {/* Sheet Container */}
+      <div className="flex-1 overflow-auto bg-gray-100 print:bg-white print:overflow-visible print:block">
+        <div className="bg-white shadow-xl print:shadow-none w-full max-w-[210mm] mx-auto p-6 md:p-[10mm] box-border text-black min-h-full print:p-0 print:max-w-none print:w-full print:block">
           
-          {/* Print Header */}
-          <div className="text-center mb-4 border-b-2 border-black pb-2">
-             <h2 className="text-2xl font-bold uppercase tracking-wide">{settings.companyName || 'Daily Supply Sheet'}</h2>
-             <div className="flex justify-between items-end mt-2 text-sm font-medium">
-                <div>Area: <span className="font-bold text-lg">{filterArea || 'N/A'}</span></div>
-                <div>Date: <span className="font-bold text-lg">{date}</span></div>
+          {/* Redesigned Print Header - Compact */}
+          <div className="print:block mb-1">
+             <h2 className="text-xl font-bold uppercase tracking-tight text-center">{settings.companyName || 'AquaFlow Services'}</h2>
+             <div className="flex justify-between items-baseline border-b-2 border-black pb-1 px-1">
+                <div className="text-[13px] font-bold">Area: <span className="text-base ml-1">{filterArea || 'N/A'}</span></div>
+                <div className="text-[13px] font-bold">Date: <span className="text-base ml-1">{date}</span></div>
              </div>
           </div>
 
-          {/* Print Table */}
-          <table className="w-full border-collapse border border-black text-xs">
-            <thead>
-              <tr className="bg-gray-100 print:bg-transparent">
-                <th className="border border-black px-1 py-2 text-left w-8">No.</th>
-                <th className="border border-black px-2 py-2 text-left">Customer Name</th>
-                <th className="border border-black px-2 py-2 text-left w-32">Landmark</th>
-                <th className="border border-black px-1 py-2 text-center w-10">Jar<br/>IN</th>
-                <th className="border border-black px-1 py-2 text-center w-10">Jar<br/>OUT</th>
-                <th className="border border-black px-1 py-2 text-center w-10">Th<br/>IN</th>
-                <th className="border border-black px-1 py-2 text-center w-10">Th<br/>OUT</th>
-                <th className="border border-black px-1 py-2 text-center w-16">Pay</th>
-                <th className="border border-black px-1 py-2 text-center w-16">Due</th>
-                <th className="border border-black px-1 py-2 text-center w-12 bg-gray-50 print:bg-transparent">Jar<br/>Bal</th>
-                <th className="border border-black px-1 py-2 text-center w-12 bg-gray-50 print:bg-transparent">Th<br/>Bal</th>
+          {/* Print Table - Increased Font Sizes */}
+          <table className="w-full border-collapse border border-black text-[13px] print:text-[13px] print:table">
+            <thead className="print:table-header-group">
+              <tr className="bg-gray-100 print:bg-gray-100">
+                <th className="border border-black px-1 py-1.5 text-left w-[30px] font-bold">No.</th>
+                <th className="border border-black px-2 py-1.5 text-left w-[150px] font-bold">Customer Name</th>
+                <th className="border border-black px-2 py-1.5 text-left w-[110px] font-bold">Landmark</th>
+                <th className="border border-black px-2 py-1.5 text-left w-[95px] font-bold">Phone</th>
+                <th className="border border-black px-0.5 py-1 text-center w-8 font-bold">Jar<br/>IN</th>
+                <th className="border border-black px-0.5 py-1 text-center w-8 font-bold">Jar<br/>OUT</th>
+                <th className="border border-black px-0.5 py-1 text-center w-8 font-bold">Th<br/>IN</th>
+                <th className="border border-black px-0.5 py-1 text-center w-8 font-bold">Th<br/>OUT</th>
+                <th className="border border-black px-1 py-1 text-center w-10 font-bold">Pay</th>
+                <th className="border border-black px-1 py-1 text-center w-10 font-bold">Due</th>
+                <th className="border border-black px-0.5 py-1 text-center w-9 bg-gray-50 print:bg-gray-50 font-bold">Jar<br/>Bal</th>
+                <th className="border border-black px-0.5 py-1 text-center w-9 bg-gray-50 print:bg-gray-50 font-bold">Th<br/>Bal</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="print:table-row-group">
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-8 text-gray-500 italic">
+                  <td colSpan={12} className="text-center py-8 text-gray-500 italic border border-black">
                     {areas.length === 0 ? "No Areas Found" : "Select an area to view supply sheet"}
                   </td>
                 </tr>
@@ -151,26 +144,25 @@ const SupplyChart: React.FC = () => {
                   const stat = stats[customer.id] || { currentJarBalance: 0, currentThermosBalance: 0, totalDue: 0 };
                   
                   return (
-                    <tr key={customer.id} className="print:h-8">
-                      <td className="border border-black px-1 py-1 text-center text-gray-600">{index + 1}</td>
-                      <td className="border border-black px-2 py-1">
-                        <div className="font-semibold truncate max-w-[150px] font-hindi">{customer.nameHindi || customer.name}</div>
+                    <tr key={customer.id} className="h-7 print:h-[7.5mm] break-inside-avoid print:break-inside-avoid">
+                      <td className="border border-black px-1 py-0 text-center text-gray-500 font-medium">{index + 1}</td>
+                      <td className="border border-black px-2 py-0">
+                        <div className="font-bold truncate max-w-[145px] font-hindi leading-tight">{customer.nameHindi || customer.name}</div>
                       </td>
-                      <td className="border border-black px-2 py-1 truncate max-w-[100px] text-[10px]">{customer.landmark}</td>
+                      <td className="border border-black px-2 py-0 truncate max-w-[105px] text-[11px] leading-tight font-medium text-gray-600">{customer.landmark}</td>
+                      <td className="border border-black px-2 py-0 text-[11px] font-bold font-mono text-gray-700">{customer.mobile}</td>
                       
-                      {/* Blank Columns for Manual Entry */}
-                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
-                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
-                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
-                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
-                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
-                      <td className="border border-black px-1 py-1 text-center font-medium"></td>
+                      <td className="border border-black px-1 py-0 text-center"></td>
+                      <td className="border border-black px-1 py-0 text-center"></td>
+                      <td className="border border-black px-1 py-0 text-center"></td>
+                      <td className="border border-black px-1 py-0 text-center"></td>
+                      <td className="border border-black px-1 py-0 text-center"></td>
+                      <td className="border border-black px-1 py-0 text-center"></td>
                       
-                      {/* Balances - Show Current System Balance */}
-                      <td className="border border-black px-1 py-1 text-center font-bold text-[10px] bg-gray-50 print:bg-transparent">
+                      <td className="border border-black px-1 py-0 text-center font-bold bg-gray-50/30 print:bg-transparent">
                         {stat.currentJarBalance > 0 ? stat.currentJarBalance : ''}
                       </td>
-                      <td className="border border-black px-1 py-1 text-center font-bold text-[10px] bg-gray-50 print:bg-transparent">
+                      <td className="border border-black px-1 py-0 text-center font-bold bg-gray-50/30 print:bg-transparent">
                         {stat.currentThermosBalance > 0 ? stat.currentThermosBalance : ''}
                       </td>
                     </tr>
@@ -180,13 +172,44 @@ const SupplyChart: React.FC = () => {
             </tbody>
           </table>
           
-          {/* Print Footer */}
-          <div className="mt-4 pt-4 border-t border-black flex justify-between text-xs print:flex hidden">
-             <div>Printed on: {new Date().toLocaleString()}</div>
-             <div className="font-bold">Signature: __________________________</div>
+          <div className="mt-4 pt-4 border-t border-black flex justify-between text-[11px] print:flex hidden font-bold">
+             <div>Printed: {new Date().toLocaleString()} | Area: {filterArea}</div>
+             <div>Authorized Signature: __________________________</div>
           </div>
         </div>
       </div>
+      <style>{`
+        @media print {
+          body { 
+            overflow: visible !important; 
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          #root { height: auto !important; overflow: visible !important; }
+          .print\\:block { display: block !important; }
+          .print\\:hidden { display: none !important; }
+          @page { 
+            size: A4;
+            margin: 10mm 5mm 10mm 5mm; 
+          }
+          /* Ensure layout doesn't break table pagination */
+          .flex, .flex-col { display: block !important; }
+          
+          table { 
+            width: 100% !important; 
+            border-collapse: collapse !important; 
+            table-layout: fixed !important;
+            page-break-inside: auto !important;
+          }
+          thead { display: table-header-group !important; }
+          tbody { display: table-row-group !important; }
+          tr { 
+            page-break-inside: avoid !important;
+            page-break-after: auto !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
