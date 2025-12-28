@@ -2,7 +2,7 @@
 export interface Customer {
   id: string;
   name: string;
-  nameHindi?: string; // New field for Hindi Name
+  nameHindi?: string;
   area: string;
   address: string; 
   landmark: string;
@@ -40,9 +40,10 @@ export interface AppSettings {
   companyAddress: string;
   companyMobile: string;
   billFooterNote: string;
+  dataStoragePath?: string; // Path for Electron DB
+  autoBackupPath?: string;  // Path for Backups
 }
 
-// Helper to calculate cost for a single transaction based on customer rates
 export const calculateDailyCost = (t: Transaction, c: Customer): number => {
   return (t.jarsDelivered * c.rateJar) + (t.thermosDelivered * c.rateThermos);
 };
