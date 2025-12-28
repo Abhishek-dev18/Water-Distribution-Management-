@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Users, ClipboardList, Receipt, LayoutDashboard, Menu, MapPin, Settings as SettingsIcon, FileSpreadsheet, BarChart3, LogOut } from 'lucide-react';
+import { Users, ClipboardList, Receipt, LayoutDashboard, Menu, MapPin, Settings as SettingsIcon, FileSpreadsheet, BarChart3, LogOut, Wallet } from 'lucide-react';
 import CustomerManager from './components/CustomerManager';
 import SupplySheet from './components/SupplySheet';
 import Billing from './components/Billing';
@@ -10,9 +10,10 @@ import Settings from './components/Settings';
 import SupplyChart from './components/SupplyChart';
 import Analytics from './components/Analytics';
 import Login from './components/Login';
+import PaymentCollection from './components/PaymentCollection';
 
-// Simple Router since we can't use React Router DOM easily in this file structure constraint without complex setup
-type Page = 'dashboard' | 'analytics' | 'supply' | 'billing' | 'customers' | 'areas' | 'settings' | 'chart';
+// Simple Router setup
+type Page = 'dashboard' | 'analytics' | 'supply' | 'billing' | 'payments' | 'customers' | 'areas' | 'settings' | 'chart';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -58,12 +59,13 @@ const App: React.FC = () => {
             AquaFlow
           </span>
         </div>
-        <div className="p-4 space-y-2 flex flex-col h-[calc(100%-4rem)]">
+        <div className="p-4 space-y-1 flex flex-col h-[calc(100%-4rem)] overflow-y-auto">
           <NavItem page="dashboard" icon={LayoutDashboard} label="Dashboard" />
           <NavItem page="analytics" icon={BarChart3} label="Analytics" />
           <NavItem page="supply" icon={ClipboardList} label="Daily Supply" />
           <NavItem page="chart" icon={FileSpreadsheet} label="Supply Chart" />
           <NavItem page="billing" icon={Receipt} label="Billing" />
+          <NavItem page="payments" icon={Wallet} label="Payments" />
           
           <div className="pt-4 pb-2 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Management</div>
           <NavItem page="customers" icon={Users} label="Customers" />
@@ -108,6 +110,7 @@ const App: React.FC = () => {
           {currentPage === 'supply' && <SupplySheet />}
           {currentPage === 'chart' && <SupplyChart />}
           {currentPage === 'billing' && <Billing />}
+          {currentPage === 'payments' && <PaymentCollection />}
           {currentPage === 'settings' && <Settings />}
         </main>
       </div>
