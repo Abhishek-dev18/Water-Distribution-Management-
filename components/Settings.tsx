@@ -4,7 +4,7 @@ import { Settings as SettingsIcon, Save, Database, Trash2, Upload, RefreshCw, Fo
 import { getSettings, saveSettings, saveCustomersBulk, generateNextCustomerId, getCustomers, deleteCustomer, saveArea, getAreas, exportDatabase, importDatabase } from '../services/db';
 import { AppSettings, Customer } from '../types';
 
-const Settings: React.FC = () => {
+export default function Settings() {
   const [formData, setFormData] = useState<AppSettings>({
     companyName: '',
     companyAddress: '',
@@ -92,6 +92,8 @@ const Settings: React.FC = () => {
 
     const testCustomers: Customer[] = [];
     const today = new Date().toISOString().split('T')[0];
+    const landmarks = ["Near Temple", "Opposite Park", "Beside Market", "Main Gate", "Water Tank"];
+    const hindiLandmarks = ["मंदिर के पास", "पार्क के सामने", "मार्केट के बगल में", "मेन गेट", "वाटर टैंक"];
     
     for (let i = 1; i <= 20; i++) {
       const area = areas[Math.floor(Math.random() * areas.length)].name;
@@ -100,6 +102,7 @@ const Settings: React.FC = () => {
       const hindiNames = ["राजेश कुमार", "अमित शर्मा", "सुरेश गुप्ता", "प्रिया सिंह", "अंजलि वर्मा", "विक्रम राठौर", "सुनील यादव", "दीपक मौर्य", "मीना देवी", "कविता झा"];
       
       const nameIdx = Math.floor(Math.random() * names.length);
+      const lIdx = Math.floor(Math.random() * landmarks.length);
 
       const newCust: Customer = {
         id: `${id.substring(0, 6)}${String(i).padStart(4, '0')}`, // Mocking sequence for bulk
@@ -107,11 +110,13 @@ const Settings: React.FC = () => {
         nameHindi: `${hindiNames[nameIdx]} ${i}`,
         area: area,
         address: `${i * 101}, Main Street, Sector ${Math.floor(Math.random() * 50)}`,
-        landmark: `Near ${['Water Tank', 'Temple', 'Park', 'Market', 'School'][Math.floor(Math.random() * 5)]}`,
+        landmark: landmarks[lIdx],
+        landmarkHindi: hindiLandmarks[lIdx],
         mobile: `98${Math.floor(10000000 + Math.random() * 90000000)}`,
         rateJar: 20,
         rateThermos: 10,
         securityDeposit: 500,
+        oldDues: Math.floor(Math.random() * 1000),
         startDate: today
       };
       testCustomers.push(newCust);
@@ -315,6 +320,4 @@ const Settings: React.FC = () => {
       )}
     </div>
   );
-};
-
-export default Settings;
+}

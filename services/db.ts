@@ -151,7 +151,7 @@ export const saveCustomer = (customer: Omit<Customer, 'id'> | Customer): Custome
     }
   } else {
     // Fallback: Create with random ID if no ID provided
-    newCustomer = { ...customer, id: generateId() };
+    newCustomer = { ...customer, id: generateId() } as Customer;
     customers.push(newCustomer);
   }
   
@@ -227,7 +227,7 @@ export const getCustomerStats = (customerId: string): CustomerStats => {
 
   let jarBal = 0;
   let thermosBal = 0;
-  let due = 0;
+  let due = Number(customer.oldDues || 0);
 
   transactions.forEach(t => {
     jarBal += (t.jarsDelivered - t.jarsReturned);

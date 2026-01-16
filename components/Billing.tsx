@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Printer, Search, Download, Filter, User, Hash } from 'lucide-react';
+import { Printer, Search, Filter, User, Calendar } from 'lucide-react';
 import { Customer, Transaction, calculateDailyCost, AppSettings } from '../types';
-import { getCustomers, getTransactionsByCustomerAndMonth, getCustomerStats, getSettings } from '../services/db';
+import { getCustomers, getTransactions, getSettings } from '../services/db';
 
 const Billing: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
@@ -11,6 +11,7 @@ const Billing: React.FC = () => {
   const [filterArea, setFilterArea] = useState<string>('All');
   
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [settings, setSettings] = useState<AppSettings>({
       companyName: 'AquaFlow Services',
       companyAddress: '',
@@ -20,6 +21,7 @@ const Billing: React.FC = () => {
   
   useEffect(() => {
     setCustomers(getCustomers());
+    setAllTransactions(getTransactions());
     setSettings(getSettings());
   }, []);
 
@@ -28,21 +30,39 @@ const Billing: React.FC = () => {
     if (!selectedCustomerId || !selectedMonth) return null;
     
     const [year, month] = selectedMonth.split('-').map(Number);
-    const transactions = getTransactionsByCustomerAndMonth(selectedCustomerId, year, month - 1); 
-    const customer = customers.find(c => c.id === selectedCustomerId);
+    const startOfMonth = new Date(year, month - 1, 1);
     
+    const customer = customers.find(c => c.id === selectedCustomerId);
     if (!customer) return null;
+
+    // 1. Calculate Old Dues (Balance before this month + customer's initial old dues)
+    let openingBalance = Number(customer.oldDues || 0);
+    allTransactions.forEach(t => {
+      if (t.customerId === customer.id) {
+        const tDate = new Date(t.date);
+        if (tDate < startOfMonth) {
+          const cost = calculateDailyCost(t, customer);
+          openingBalance += (cost - (t.paymentAmount || 0));
+        }
+      }
+    });
+
+    // 2. Calculate Current Month Details
+    const transactionsInMonth = allTransactions.filter(t => {
+      const [tYear, tMonth] = t.date.split('-').map(Number);
+      return t.customerId === customer.id && tYear === year && tMonth === month;
+    });
 
     const daysInMonth = new Date(year, month, 0).getDate();
     const dailyRows = [];
-    let totalAmount = 0;
-    let totalPaid = 0;
+    let currentMonthTotal = 0;
+    let currentMonthPaid = 0;
     let totalJars = 0;
     let totalThermos = 0;
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const tx = transactions.find(t => t.date === dateStr);
+      const tx = transactionsInMonth.find(t => t.date === dateStr);
       
       const jars = tx?.jarsDelivered || 0;
       const thermos = tx?.thermosDelivered || 0;
@@ -50,8 +70,8 @@ const Billing: React.FC = () => {
       
       const dailyCost = (jars * customer.rateJar) + (thermos * customer.rateThermos);
       
-      totalAmount += dailyCost;
-      totalPaid += paid;
+      currentMonthTotal += dailyCost;
+      currentMonthPaid += paid;
       totalJars += jars;
       totalThermos += thermos;
 
@@ -73,14 +93,15 @@ const Billing: React.FC = () => {
       monthName,
       rows: dailyRows,
       summary: {
-        totalAmount,
-        totalPaid,
-        netDue: totalAmount - totalPaid,
+        openingBalance,
+        currentMonthTotal,
+        currentMonthPaid,
+        totalOutstanding: openingBalance + currentMonthTotal - currentMonthPaid,
         totalJars,
         totalThermos
       }
     };
-  }, [selectedCustomerId, selectedMonth, customers]);
+  }, [selectedCustomerId, selectedMonth, customers, allTransactions]);
 
   const areas = useMemo(() => ['All', ...Array.from(new Set(customers.map(c => c.area)))], [customers]);
 
@@ -102,18 +123,22 @@ const Billing: React.FC = () => {
       <div className="flex flex-col xl:flex-row items-start xl:items-end gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm print:hidden border border-gray-100">
         <div>
            <h1 className="text-2xl font-bold text-gray-800">Billing</h1>
-           <p className="text-sm text-gray-400">Generate monthly statements.</p>
+           <p className="text-sm text-gray-400">Generate monthly statements including opening balance.</p>
         </div>
         
         <div className="flex flex-wrap gap-4 w-full xl:w-auto flex-1 justify-end items-end">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Select Month</label>
-            <input 
-              type="month" 
-              value={selectedMonth} 
-              onChange={e => setSelectedMonth(e.target.value)}
-              className="border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500 outline-none bg-white min-w-[140px] text-gray-700 transition-all"
-            />
+            <div className="relative group">
+              <input 
+                type="month" 
+                value={selectedMonth} 
+                onClick={(e) => (e.currentTarget as any).showPicker?.()}
+                onChange={e => setSelectedMonth(e.target.value)}
+                className="border border-gray-200 rounded-lg p-2 pr-8 text-sm focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500 outline-none bg-white min-w-[140px] text-gray-700 transition-all cursor-pointer"
+              />
+              <Calendar size={14} className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none group-hover:text-brand-500" />
+            </div>
           </div>
 
           <div className="min-w-[160px]">
@@ -189,7 +214,7 @@ const Billing: React.FC = () => {
             </div>
           </div>
 
-          {/* Customer & Period Details - Compact */}
+          {/* Customer & Period Details */}
           <div className="flex justify-between items-start mb-1 text-sm border-b border-dashed border-gray-300 pb-2">
             <div className="flex-1">
               <div className="flex items-baseline gap-2">
@@ -199,14 +224,14 @@ const Billing: React.FC = () => {
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[10px] text-gray-600 mt-1 font-medium">
                 <span>Area: <b>{billData.customer.area}</b></span>
-                {billData.customer.landmark && <span>Landmark: <b>{billData.customer.landmark}</b></span>}
+                {billData.customer.landmark && <span className="font-hindi">Landmark: <b>{billData.customer.landmarkHindi || billData.customer.landmark}</b></span>}
                 <span>Ph: <b>{billData.customer.mobile}</b></span>
               </div>
             </div>
             <div className="text-right flex flex-col items-end">
               <div className="flex flex-col items-end mb-1">
                 <span className="text-gray-400 text-[9px] uppercase font-bold tracking-tighter">Month</span>
-                <span className="font-bold text-base text-gray-800 leading-none uppercase">{billData.monthName} {selectedMonth}</span>
+                <span className="font-bold text-base text-gray-800 leading-none uppercase">{billData.monthName} {selectedMonth.split('-')[0]}</span>
               </div>
               <div className="flex gap-1.5">
                 <span className="text-[9px] bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 text-gray-500 whitespace-nowrap">Jar Rate: <b className="text-gray-800">₹{billData.customer.rateJar}</b></span>
@@ -223,7 +248,7 @@ const Billing: React.FC = () => {
                   <th className="border border-gray-400 p-0.5 w-10 text-center text-[10px]">Day</th>
                   <th className="border border-gray-400 p-0.5 text-center text-[10px]">Jars</th>
                   <th className="border border-gray-400 p-0.5 text-center text-[10px]">Thermos</th>
-                  <th className="border border-gray-400 p-0.5 text-right text-[10px]">Daily Amt</th>
+                  <th className="border border-gray-400 p-0.5 text-right text-[10px]">Amount</th>
                   <th className="border border-gray-400 p-0.5 text-right text-[10px]">Paid</th>
                 </tr>
               </thead>
@@ -244,8 +269,8 @@ const Billing: React.FC = () => {
             </table>
           </div>
 
-          {/* Summary - No gap after table */}
-          <div className="flex flex-row justify-between items-start gap-4 mt-0.5 pt-1 border-t border-brand-700">
+          {/* Summary Section */}
+          <div className="flex flex-row justify-between items-start gap-4 mt-1 pt-1 border-t border-brand-700">
              <div className="w-1/3 border border-gray-200 rounded p-2 bg-gray-50">
                 <h4 className="text-[9px] font-bold text-gray-400 uppercase mb-1 border-b border-gray-200 pb-0.5 tracking-wider">Supply Total</h4>
                 <div className="flex justify-between text-xs mb-0.5">
@@ -258,35 +283,39 @@ const Billing: React.FC = () => {
                 </div>
              </div>
 
-             <div className="flex-1 border border-gray-800 p-0 max-w-[280px]">
-               <div className="bg-gray-800 text-white text-[9px] font-bold p-1 px-2 uppercase tracking-wider text-center">Payment Summary</div>
+             <div className="flex-1 border border-gray-800 p-0 max-w-[280px] bg-white">
+               <div className="bg-gray-800 text-white text-[9px] font-bold p-1 px-2 uppercase tracking-wider text-center">Grand Summary</div>
                <div className="p-2 space-y-1">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-gray-600">Total Bill Amount:</span>
-                    <span className="font-bold">₹{billData.summary.totalAmount}</span>
+                  <div className="flex justify-between text-[11px] text-red-600 font-bold">
+                    <span>Old Dues (Previous Balance):</span>
+                    <span>₹{billData.summary.openingBalance.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-[11px] text-gray-500">
-                    <span>Amount Paid:</span>
-                    <span>- ₹{billData.summary.totalPaid}</span>
+                  <div className="flex justify-between text-[11px] text-gray-600">
+                    <span>Current Month Total:</span>
+                    <span>₹{billData.summary.currentMonthTotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between pt-1 border-t border-gray-200 mt-1">
-                    <span className="font-bold text-gray-800">Net Payable:</span>
-                    <span className="font-bold text-lg text-brand-700">₹{billData.summary.netDue}</span>
+                  <div className="flex justify-between text-[11px] text-gray-500 italic">
+                    <span>Paid in {billData.monthName}:</span>
+                    <span>- ₹{billData.summary.currentMonthPaid.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t-2 border-brand-700 mt-1">
+                    <span className="font-bold text-gray-800 text-xs">Total Outstanding:</span>
+                    <span className="font-black text-lg text-brand-700">₹{billData.summary.totalOutstanding.toLocaleString()}</span>
                   </div>
                </div>
             </div>
           </div>
           
-          {/* Footer - Just below Net Payable */}
-          <div className="mt-1 pt-1 border-t border-gray-100 text-center text-[10px] text-gray-400">
-            <p className="italic">{settings.billFooterNote}</p>
-            <p className="mt-0.5 text-[8px] opacity-60">Generated by {settings.companyName} | {new Date().toLocaleString()}</p>
+          {/* Bill Footer */}
+          <div className="mt-auto pt-4 border-t border-gray-100 text-center text-[10px] text-gray-400 print:mb-4">
+            <p className="italic font-hindi">{settings.billFooterNote}</p>
+            <p className="mt-1 text-[8px] opacity-60">Generated by {settings.companyName} Management System | {new Date().toLocaleString()}</p>
           </div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center text-gray-300 bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 m-4">
           <Printer size={48} className="mb-4 opacity-50"/>
-          <p className="font-medium">Select a customer to generate bill</p>
+          <p className="font-medium text-gray-400">Select a month and customer to generate a monthly statement</p>
         </div>
       )}
     </div>

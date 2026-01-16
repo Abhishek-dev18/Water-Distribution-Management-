@@ -6,10 +6,12 @@ export interface Customer {
   area: string;
   address: string; 
   landmark: string;
+  landmarkHindi?: string;
   mobile: string;
   rateJar: number;
   rateThermos: number;
   securityDeposit: number;
+  oldDues: number;
   startDate: string;
 }
 

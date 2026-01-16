@@ -63,13 +63,14 @@ const SupplyChart: React.FC = () => {
         <div className="flex flex-wrap gap-4 items-end">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Select Date</label>
-            <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-white">
-              <Calendar size={16} className="text-gray-400" />
+            <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-white group relative">
+              <Calendar size={16} className="text-gray-400 group-hover:text-brand-600" />
               <input 
                 type="date" 
                 value={date} 
+                onClick={(e) => (e.currentTarget as any).showPicker?.()}
                 onChange={(e) => setDate(e.target.value)} 
-                className="border-none focus:ring-0 text-sm font-medium text-gray-700 bg-transparent outline-none p-0"
+                className="border-none focus:ring-0 text-sm font-medium text-gray-700 bg-transparent outline-none p-0 cursor-pointer"
               />
             </div>
           </div>
@@ -149,7 +150,7 @@ const SupplyChart: React.FC = () => {
                       <td className="border border-black px-2 py-0">
                         <div className="font-bold truncate max-w-[145px] font-hindi leading-tight">{customer.nameHindi || customer.name}</div>
                       </td>
-                      <td className="border border-black px-2 py-0 truncate max-w-[105px] text-[11px] leading-tight font-medium text-gray-600">{customer.landmark}</td>
+                      <td className="border border-black px-2 py-0 truncate max-w-[105px] text-[11px] leading-tight font-hindi font-medium text-gray-600">{customer.landmarkHindi || customer.landmark}</td>
                       <td className="border border-black px-2 py-0 text-[11px] font-bold font-mono text-gray-700">{customer.mobile}</td>
                       
                       <td className="border border-black px-1 py-0 text-center"></td>
@@ -157,7 +158,9 @@ const SupplyChart: React.FC = () => {
                       <td className="border border-black px-1 py-0 text-center"></td>
                       <td className="border border-black px-1 py-0 text-center"></td>
                       <td className="border border-black px-1 py-0 text-center"></td>
-                      <td className="border border-black px-1 py-0 text-center"></td>
+                      <td className="border border-black px-1 py-0 text-center font-bold text-red-600">
+                        {stat.totalDue > 0 ? stat.totalDue : ''}
+                      </td>
                       
                       <td className="border border-black px-1 py-0 text-center font-bold bg-gray-50/30 print:bg-transparent">
                         {stat.currentJarBalance > 0 ? stat.currentJarBalance : ''}
@@ -174,7 +177,6 @@ const SupplyChart: React.FC = () => {
           
           <div className="mt-4 pt-4 border-t border-black flex justify-between text-[11px] print:flex hidden font-bold">
              <div>Printed: {new Date().toLocaleString()} | Area: {filterArea}</div>
-             <div>Authorized Signature: __________________________</div>
           </div>
         </div>
       </div>
