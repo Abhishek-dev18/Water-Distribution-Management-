@@ -63,8 +63,8 @@ const SupplyChart: React.FC = () => {
         <div className="flex flex-wrap gap-4 items-end">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Select Date</label>
-            <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-white group relative">
-              <Calendar size={16} className="text-gray-400 group-hover:text-brand-600" />
+            <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-white relative group">
+              <Calendar size={16} className="text-gray-400 group-hover:text-brand-600 transition-colors pointer-events-none" />
               <input 
                 type="date" 
                 value={date} 

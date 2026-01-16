@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Printer, Search, Filter, User, Calendar } from 'lucide-react';
+import { Printer, Search, Download, Filter, User, Hash, IndianRupee, Calendar } from 'lucide-react';
 import { Customer, Transaction, calculateDailyCost, AppSettings } from '../types';
-import { getCustomers, getTransactions, getSettings } from '../services/db';
+import { getCustomers, getTransactions, getTransactionsByCustomerAndMonth, getSettings } from '../services/db';
 
 const Billing: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
